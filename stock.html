@@ -1,0 +1,176 @@
+<meta http-equiv="Content-Security-Policy"
+    content="default-src *; style-src 'self' http://* 'unsafe-inline'; script-src 'self' http://* 'unsafe-inline' 'unsafe-eval'" />
+<html>
+    <head>
+        <title>Dummy Stock App</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+            integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    </head>
+</html>
+<body>
+    <style>
+        body{
+            background-color: #e4e9f3;
+        }
+        .header{
+            display: flex;
+            justify-content: center;
+            padding: 5%;
+        }
+        .mainContent{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .addBtn {
+            background-color: #19208e;
+            border: 0px;
+            margin: 1%;
+            color: white;
+            font-weight: bold;
+            border-radius: 0px;
+
+        }
+        .controlButtons{
+            display: flex;
+            flex-direction: column;
+        }
+        .stockListGroup{
+            display: flex;
+            color: black;
+            border: 0px;
+        }
+        .stockListGroup > label{
+            padding: 2%;
+        }
+        .stockListItem{
+            display: flex;
+            padding: 0%;
+            border-bottom: 0.5px solid rgba(0,0,0,.125);
+        }
+        .stockName{
+            font-weight: bold;
+        }
+        .stockNos{
+            display: flex;
+            justify-content: flex-end;
+        }
+        .headerLabel{
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .list-group-item:last-of-type{
+            border : 0px;
+        }
+    </style>
+    <div class="col-lg-12 header">
+        <h1>Sample Stock App</h1>
+    </div>
+    <div class="mainContent col-lg-12">
+        <div class="controlButtons">
+            <label  class="headerLabel">Select Stock</label>
+            <button id="INFY"  class="btn addBtn" onclick="watchStock('INFY')">INFY</button>
+            <button id="HUL" class="btn addBtn" onclick="watchStock('HUL')">HUL</button>
+            <button id="SBIN" class="btn addBtn" onclick="watchStock('SBIN')">SBIN</button>
+            <button id="TATAPOWER" class="btn addBtn" onclick="watchStock('TATAPOWER')">TATAPOWER</button>
+        </div>
+        <div class="stockTable col-6">
+            <div id="stockTable" class="stockItem">
+                <ul class="list-group">
+                    <div id="tableContent" class="tableContent">
+                        <label></label>
+                    </div>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>    
+    const socket = io.connect();
+    const socketList = [];
+    socket.on('mainSocketMsg', (stocksList) => {
+        console.log(stocksList);
+    });
+
+Exist = (stockName)=> {
+
+}
+
+    watchStock = ( stockName ) =>{
+      
+        const stockSocket = io.connect('/'+ stockName);
+          
+        addListItem(stockName);
+        stockSocket.on('stockUpdateMsg', (stockValue) => {
+            console.log(`Stock update for ${stockName}: `, stockValue);
+            document.getElementById(`${stockName}Percent`).innerHTML = `${(stockValue.change_percent).toFixed(2)}%`;
+            document.getElementById(`${stockName}Amount`).innerHTML = `${(stockValue.price).toFixed(2)}Rs`;
+          
+
+       //     const ele1 = document.getElementById("myBtn1");
+//const ele2 = document.getElementById("myBtn2");
+//const ele3 = document.getElementById("myBtn3");
+//const ele4 = document.getElementById("myBtn4");
+
+//const fruits = [ele1,ele2,ele3,ele4];
+
+//fruits.forEach((element => {
+//element.disabled = true;
+//}));
+});
+    socketList.push(stockSocket);
+    Exist(stockName);
+};
+
+
+Exist = (stockName) => {
+    socketList.forEach((stockSocket, index) => {
+            if(stockSocket.nsp.includes(stockName)){
+                const INFY = document.getElementById("INFY");
+                const HUL = document.getElementById("HUL");
+                const SBIN = document.getElementById("SBIN");
+                const TATAPOWER = document.getElementById("TATAPOWER");
+                const fruits = [INFY, HUL, SBIN, TATAPOWER];
+                for (i = 0; i < fruits.length; i++) {
+                    if (fruits[i].id === stockName) {
+                        fruits[i].disabled = true;                    }
+                }
+            }
+        });
+
+}
+
+    unwatchStock = ( stockName ) => {
+        socketList.forEach((stockSocket, index) => {
+            if(stockSocket.nsp.includes(stockName)){
+                const INFY = document.getElementById("INFY");
+                const HUL = document.getElementById("HUL");
+                const fruits = [INFY, HUL, SBIN, TATAPOWER];
+                for (i = 0; i < fruits.length; i++) {
+                    if (fruits[i].id === stockName) {
+                        fruits[i].disabled = false;                    }
+                }
+                stockSocket.disconnect();
+                document.getElementById(`${stockName}ListItem`).remove();
+                document.getElementsByClassName("btn").disabled = false;
+            }
+        });
+    }
+
+    addListItem = ( stockName ) => {
+        let tableElem = document.getElementById('tableContent');
+        const htmlContent = `<li id="${stockName}ListItem" class="list-group-item stockListGroup">
+            <div class="col-lg-12 stockListItem">
+                <div class="stockName col-lg-8"><label>${stockName}</label></div>
+                <div class="stockNos col-lg-4">
+                    <label class="col-lg-4" id="${stockName}Percent" >0%</label>
+                    <label class="col-lg-6" id="${stockName}Amount">0Rs</label>
+                    <label class="col-lg-2" onclick="unwatchStock('${stockName}')">X</label>
+                </div>
+            </div>
+        </li>`;
+        tableElem.innerHTML += htmlContent;
+    }
+</script>
+</html>
